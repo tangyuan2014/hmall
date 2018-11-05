@@ -20,7 +20,7 @@
 
         <!--jdbc的数据库连接 -->
         <jdbcConnection
-                driverClass="${db.driverClassName}"
+                driverClass="com.mysql.jdbc.Driver}"
                 connectionURL="jdbc:mysql://192.168.56.101:3306/hmall_learning?characterEncoding=utf-8"
                 userId="${db.username}"
                 password="${db.password}">
