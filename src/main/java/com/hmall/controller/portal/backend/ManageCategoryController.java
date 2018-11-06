@@ -59,7 +59,7 @@ public class ManageCategoryController {
 
     }
 
-    @RequestMapping("set_categorychildrencategory.do")
+    @RequestMapping("get_categorychildrencategory.do")
     @ResponseBody
     public ServerResponse<List<Category>> getChilrenParallelCategory(HttpSession session, @RequestParam(value = "categoryId",defaultValue = "0") Integer categoryId){
         User user = (User) session.getAttribute(Const.CURRENT_USER);
@@ -69,7 +69,7 @@ public class ManageCategoryController {
 
         if (iUserService.checkAdmin(user).isSuccess()) {
 
-            return iCategoryService.getchildrenParallelCategory(categoryId);
+            return iCategoryService.getChildrenParallelCategory(categoryId);
         }
         return ServerResponse.createBySuccessMessage("无权限操作");
     }
@@ -77,7 +77,21 @@ public class ManageCategoryController {
 /**
  * 查询当前category id 和递归查询子节点
  */
-     public ServerResponse<Set<Category>> G
+@RequestMapping("get_categorychildrendeepcategory.do")
+@ResponseBody
+     public ServerResponse getCategoryAndChildrenCategory(HttpSession session,Integer categoryId){
+         User user = (User) session.getAttribute(Const.CURRENT_USER);
+         if (user == null) {
+             return ServerResponse.createByErrorMessage("请登录");
+         }
+
+         if (iUserService.checkAdmin(user).isSuccess()) {
+
+             return iCategoryService.getCategoryAndChildrenCategory(categoryId);
+         }
+         return ServerResponse.createBySuccessMessage("无权限操作");
+
+     }
 
 
 }

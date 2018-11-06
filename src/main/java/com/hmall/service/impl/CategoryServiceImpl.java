@@ -1,5 +1,7 @@
 package com.hmall.service.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.hmall.common.ServerResponse;
 import com.hmall.dao.CategoryMapper;
 import com.hmall.pojo.Category;
@@ -14,6 +16,8 @@ import org.springframework.util.CollectionUtils;
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 @Service("iCategoryService")
 public class CategoryServiceImpl implements ICategoryService {
@@ -57,7 +61,7 @@ public class CategoryServiceImpl implements ICategoryService {
         return ServerResponse.createByErrorMessage("更新名字失败");
     }
 
-    public ServerResponse getchildrenParallelCategory(Integer categoryId){
+    public ServerResponse getChildrenParallelCategory(Integer categoryId){
         if (categoryId==null){
             return ServerResponse.createByErrorMessage("查找参数错误");
         }
@@ -66,5 +70,38 @@ public class CategoryServiceImpl implements ICategoryService {
             logger.info("未找到当前子分类");
         }
         return ServerResponse.createBySuccess(categoryList);
+    }
+
+    public ServerResponse getCategoryAndChildrenCategory( Integer categoryId){
+        Set<Category> categorySet= Sets.newHashSet();
+        findChildCategory(categorySet,categoryId);
+        List<Integer> categoryList= Lists.newArrayList();
+        if (categoryId!=null){
+            for (Category categoryItem: categorySet
+                 ) { categoryList.add(categoryItem.getId());
+            }
+        }
+        return ServerResponse.createBySuccess(categoryList);
+    }
+
+    /**
+     * 递归算法
+     * @param categorySet
+     * @param categoryId
+     * @return
+     */
+    private Set<Category> findChildCategory (Set<Category> categorySet,Integer categoryId){
+
+        Category category=categoryMapper.selectByPrimaryKey(categoryId);
+        if (category!=null){
+            categorySet.add(category);
+            }
+        List <Category> categoryList=categoryMapper.selectCategoryChilrenByCaegoryId(categoryId);
+        for (Category category1:categoryList
+             ) { findChildCategory(categorySet,category1.getId());
+        }
+        return categorySet;
+
+
     }
 }

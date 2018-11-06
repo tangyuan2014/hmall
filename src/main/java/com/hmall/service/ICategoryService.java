@@ -7,5 +7,7 @@ public interface ICategoryService {
 
     ServerResponse setCategoryName(Integer categoryId, String categoryName);
 
-    ServerResponse getchildrenParallelCategory(Integer categoryId);
+    ServerResponse getChildrenParallelCategory(Integer categoryId);
+
+    ServerResponse getCategoryAndChildrenCategory( Integer categoryId);
 }
