@@ -9,9 +9,11 @@ import com.hmall.service.IUserService;
 import com.hmall.Utils.MD5Util;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Service("iUserService")
 public class UserServiceImpl implements IUserService {
 
     @Autowired
@@ -171,6 +173,14 @@ public class UserServiceImpl implements IUserService {
             return ServerResponse.createByErrorMessage("找不到当前用户");
         }
         return ServerResponse.createBySuccess("登陆成功",user);
+    }
+
+    public ServerResponse checkAdmin (User user){
+
+       if(user!=null&&user.getRole().intValue()==Const.Role.ADMINISTRATER){
+           return ServerResponse.createBySuccess();
+       }
+       return ServerResponse.createByError();
     }
 
 }

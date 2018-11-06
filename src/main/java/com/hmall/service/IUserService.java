@@ -4,7 +4,7 @@ import com.hmall.common.ServerResponse;
 import com.hmall.pojo.User;
 import org.springframework.stereotype.Service;
 
-@Service
+
 public interface IUserService {
 
     ServerResponse<User> login(String username, String password);
@@ -24,4 +24,6 @@ public interface IUserService {
     ServerResponse<User> updateUserInfo(User user);
 
     ServerResponse<User> getUserInformation(int userId);
+
+    ServerResponse checkAdmin (User user);
 }
