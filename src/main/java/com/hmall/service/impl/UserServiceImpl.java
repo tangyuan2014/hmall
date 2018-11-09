@@ -103,7 +103,7 @@ public class UserServiceImpl implements IUserService {
         int resultCount = userMapper.checkAnswer(username, question, answer);
         if (resultCount > 0) {
             String forgettoken = UUID.randomUUID().toString();
-            TokenCatch.setKey("tocken_" + username, forgettoken);
+            TokenCatch.setKey("token_" + username, forgettoken);
             return ServerResponse.createBySuccess(forgettoken);
         }
         return ServerResponse.createByErrorMessage("问题答案不正确");
@@ -119,11 +119,11 @@ public class UserServiceImpl implements IUserService {
             return ServerResponse.createByErrorMessage("用户不存在");
         }
 
-        if (StringUtils.isBlank(TokenCatch.getKey("token" + username))) {
+        if (StringUtils.isBlank(TokenCatch.getKey("token_" + username))) {
             return ServerResponse.createByErrorMessage("token已过期");
         }
 
-        if (StringUtils.equals(token, TokenCatch.getKey("token" + username))) {
+        if (StringUtils.equals(token, TokenCatch.getKey("token_" + username))) {
             String MD5password = MD5Util.MD5EncodeUtf8(passwordNew);
             int resultCount = userMapper.updatePasswordByUsername(username, passwordNew);
             if (resultCount > 0) {
