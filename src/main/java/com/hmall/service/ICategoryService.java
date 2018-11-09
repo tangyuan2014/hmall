@@ -2,6 +2,8 @@ package com.hmall.service;
 
 import com.hmall.common.ServerResponse;
 
+import java.util.List;
+
 public interface ICategoryService {
     ServerResponse addCategory(Integer parentId, String categoryName);
 
@@ -9,5 +11,5 @@ public interface ICategoryService {
 
     ServerResponse getChildrenParallelCategory(Integer categoryId);
 
-    ServerResponse getCategoryAndChildrenCategory( Integer categoryId);
+    ServerResponse<List<Integer>> getCategoryAndChildrenCategory(Integer categoryId);
 }
