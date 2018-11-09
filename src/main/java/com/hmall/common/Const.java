@@ -21,6 +21,11 @@ public class Const {
         Set<String> price_asc_desc = Sets.newHashSet("price_asc","price_desc");
     }
 
+    public interface Cart{
+        int CHECKED=1;
+        int UNCHECKED=0;
+    }
+
      public enum ProductStatusEnum {
          ON_SALE(1,"ON SALE");
 

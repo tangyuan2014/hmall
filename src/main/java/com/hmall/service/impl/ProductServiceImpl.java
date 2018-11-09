@@ -189,18 +189,25 @@ public class ProductServiceImpl implements IProductService {
             categoryList = iCategoryService.getCategoryAndChildrenCategory(categoryId).getData();
         }
         if (StringUtils.isNoneBlank(keyword)) {
-            keyword=new StringBuilder().append("%").append(keyword).append("%").toString();
+            keyword = new StringBuilder().append("%").append(keyword).append("%").toString();
         }
-        PageHelper.startPage(pageNum,pageSize);
-        if (StringUtils.isNoneBlank(orderBy)){
-            if (Const.OrderBy.price_asc_desc.contains(orderBy)){
-                String[] split=orderBy.split("_");
-                PageHelper.orderBy(split[0]+" "+split[1]);
+        PageHelper.startPage(pageNum, pageSize);
+        if (StringUtils.isNoneBlank(orderBy)) {
+            if (Const.OrderBy.price_asc_desc.contains(orderBy)) {
+                String[] split = orderBy.split("_");
+                PageHelper.orderBy(split[0] + " " + split[1]);
             }
         }
-        List<Product> productList=;
 
-
-
-}
+        List<Product> productList = productMapper.selectByNameAndCategoryId(StringUtils.isBlank(keyword) ? null : keyword, categoryList.size() == 0 ? null:categoryList);
+        List<ProductListVo> productListVoList = Lists.newArrayList();
+        for (Product productItem : productList
+                ) {
+            ProductListVo productListVo = assembleProductListVo(productItem);
+            productListVoList.add(productListVo);
+        }
+        PageInfo pageInfo = new PageInfo(productList);
+        pageInfo.setList(productListVoList);
+        return ServerResponse.createBySuccess(pageInfo);
+    }
 }

@@ -28,7 +28,7 @@ public class ProductController {
                                                 @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
                                                 @RequestParam(value = "pageSize", defaultValue = "10") int PageSize,
                                                 @RequestParam(value = "orderBy", defaultValue = "") String orderBy) {
-
+        return iProductService.userGetList(keywords,categoryId,pageNum,PageSize,orderBy);
     }
 
 }
