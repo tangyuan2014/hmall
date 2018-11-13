@@ -30,6 +30,11 @@ public class CartServiceImpl implements ICartService {
     @Autowired
     private ProductMapper productMapper;
 
+    public ServerResponse<CartVo> list(Integer userId) {
+        CartVo cartVo = this.getCartVoLimit(userId);
+        return ServerResponse.createBySuccess(cartVo);
+    }
+
     public ServerResponse<CartVo> addItem(Integer userId, Integer count, Integer productId) {
         if (count == null || productId == null) {
             return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(), ResponseCode.ILLEGAL_ARGUMENT.getDesc());
@@ -47,8 +52,7 @@ public class CartServiceImpl implements ICartService {
             cart.setQuantity(count);
             cartMapper.updateByPrimaryKeySelective(cart);
         }
-        CartVo cartVo = this.getCartVoLimit(userId);
-        return ServerResponse.createBySuccess(cartVo);
+        return this.list(userId);
     }
 
     public ServerResponse<CartVo> update(Integer userId, Integer count, Integer productId) {
@@ -60,18 +64,33 @@ public class CartServiceImpl implements ICartService {
             cart.setQuantity(count);
         }
         cartMapper.updateByPrimaryKeySelective(cart);
-        CartVo cartVo = this.getCartVoLimit(userId);
-        return ServerResponse.createBySuccess(cartVo);
+        return this.list(userId);
     }
 
-    public ServerResponse<CartVo> deleteProduct (Integer userId, String productIds){
-        List<String> productList=Splitter.on(",").splitToList(productIds);
-        if(CollectionUtils.isEmpty(productList)){
-            return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
+    public ServerResponse<CartVo> deleteProduct(Integer userId, String productIds) {
+        List<String> productList = Splitter.on(",").splitToList(productIds);
+        if (CollectionUtils.isEmpty(productList)) {
+            return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(), ResponseCode.ILLEGAL_ARGUMENT.getDesc());
         }
-        cartMapper.deleteByUserIdAndProductIds(userId,productList);
-        CartVo cartVo=this.getCartVoLimit(userId);
-        return ServerResponse.createBySuccess(cartVo);
+        cartMapper.deleteByUserIdAndProductIds(userId, productList);
+        return this.list(userId);
+    }
+
+    public ServerResponse<CartVo> selectOrUnselectAll(Integer userId,Integer checked){
+        cartMapper.checkedOrUncheckedAllProduct(userId,checked);
+        return this.list(userId);
+    }
+
+    public ServerResponse<CartVo> selectOrUnselect(Integer userId, Integer productId,Integer checked){
+        cartMapper.checkedOrUncheckedProduct(userId,checked,productId);
+        return this.list(userId);
+    }
+
+    public ServerResponse<Integer> getCartItemQuantity(Integer userId){
+        if(userId==null){
+            return ServerResponse.createBySuccess(0);
+        }
+        return ServerResponse.createBySuccess(cartMapper.selectCartItem(userId));
     }
 
     private CartVo getCartVoLimit(Integer userId) {

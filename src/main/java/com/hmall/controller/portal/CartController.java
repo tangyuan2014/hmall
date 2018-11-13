@@ -20,6 +20,15 @@ public class CartController {
     @Autowired
     private ICartService iCartService;
 
+    @RequestMapping("list")
+    @ResponseBody
+    public ServerResponse<CartVo> list(HttpSession session, Integer count, Integer productId) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        return iCartService.list(user.getId());
+    }
 
     @RequestMapping("add")
     @ResponseBody
@@ -48,8 +57,63 @@ public class CartController {
         if (user == null) {
             return ServerResponse.createByErrorMessage("PLEASE LOG IN");
         }
-        return iCartService.deleteProduct(user.getId(),productId);
+        return iCartService.deleteProduct(user.getId(), productId);
     }
+
+    @RequestMapping("selectAll")
+    @ResponseBody
+    public ServerResponse<CartVo> selectAll(HttpSession session) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        return iCartService.selectOrUnselectAll(user.getId(),Const.Cart.CHECKED);
+    }
+
+    @RequestMapping("unselectAll")
+    @ResponseBody
+    public ServerResponse<CartVo> UnSelectAll(HttpSession session) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        return iCartService.selectOrUnselectAll(user.getId(),Const.Cart.UNCHECKED);
+    }
+
+    @RequestMapping("select_product")
+    @ResponseBody
+    public ServerResponse<CartVo> SelectProduct(HttpSession session,Integer productId) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        return iCartService.selectOrUnselect(user.getId(),Const.Cart.CHECKED,productId);
+    }
+
+    @RequestMapping("unselect_product")
+    @ResponseBody
+    public ServerResponse<CartVo> unSelectProduct(HttpSession session,Integer productId) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        return iCartService.selectOrUnselect(user.getId(),Const.Cart.UNCHECKED,productId);
+    }
+
+    @RequestMapping("getcart_product_count")
+    @ResponseBody
+    public ServerResponse<Integer> getCartProductCount (HttpSession session) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createBySuccess(0);
+        }
+        return iCartService. getCartItemQuantity(user.getId());
+    }
+
+
+
+
+
 
 
 
