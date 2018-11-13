@@ -1,5 +1,6 @@
 package com.hmall.service.impl;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.hmall.Utils.BigDecimalUtil;
 import com.hmall.Utils.PropsUtil;
@@ -47,6 +48,29 @@ public class CartServiceImpl implements ICartService {
             cartMapper.updateByPrimaryKeySelective(cart);
         }
         CartVo cartVo = this.getCartVoLimit(userId);
+        return ServerResponse.createBySuccess(cartVo);
+    }
+
+    public ServerResponse<CartVo> update(Integer userId, Integer count, Integer productId) {
+        if (productId == null || count == null) {
+            return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(), ResponseCode.ILLEGAL_ARGUMENT.getDesc());
+        }
+        Cart cart = cartMapper.selectCartByUserIdProductId(userId, productId);
+        if (cart != null) {
+            cart.setQuantity(count);
+        }
+        cartMapper.updateByPrimaryKeySelective(cart);
+        CartVo cartVo = this.getCartVoLimit(userId);
+        return ServerResponse.createBySuccess(cartVo);
+    }
+
+    public ServerResponse<CartVo> deleteProduct (Integer userId, String productIds){
+        List<String> productList=Splitter.on(",").splitToList(productIds);
+        if(CollectionUtils.isEmpty(productList)){
+            return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
+        }
+        cartMapper.deleteByUserIdAndProductIds(userId,productList);
+        CartVo cartVo=this.getCartVoLimit(userId);
         return ServerResponse.createBySuccess(cartVo);
     }
 
@@ -110,23 +134,5 @@ public class CartServiceImpl implements ICartService {
         }
         return cartMapper.selectCheckedStatusByUserId(userId) == 0;
     }
-
-    public ServerResponse<CartVo> update(Integer userId, Integer count, Integer productId) {
-        if (productId == null || count == null) {
-            return ServerResponse.createByErrorMessageAndCode(ResponseCode.ILLEGAL_ARGUMENT.getCode(), ResponseCode.ILLEGAL_ARGUMENT.getDesc());
-        }
-        Cart cart = cartMapper.selectCartByUserIdProductId(userId, productId);
-        if (cart != null) {
-            cart.setQuantity(count);
-        }
-        cartMapper.updateByPrimaryKeySelective(cart);
-        CartVo cartVo = this.getCartVoLimit(userId);
-        return ServerResponse.createBySuccess(cartVo);
-    }
-
-    public ServerResponse<CartVo> delete(Integer userId, String productId){
-
-    }
-
 
 }

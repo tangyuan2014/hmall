@@ -117,8 +117,8 @@
     where id = #{id,jdbcType=INTEGER}
   </update>
     <select id="selectCartByUserIdProductId" resultMap="BaseResultMap" parameterType="map">
-     select
-     <include refid="Base_Column_List"/>
+        select
+        <include refid="Base_Column_List"/>
         from mmall_cart
         where user_id=#{userId}
         and product_id=#{productId}
@@ -135,4 +135,14 @@
         where user_id=#{userId}
         and checked=0
     </select>
+    <delete id="deleteByUserIdAndProductIds" parameterType="map">
+        delete from mmall_cart
+        where user_id=#{userId}
+        <if test="productIdList!=null">
+            and product_Id in
+            <foreach collection="productIdList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
 </mapper>

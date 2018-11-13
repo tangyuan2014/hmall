@@ -48,7 +48,7 @@ public class CartController {
         if (user == null) {
             return ServerResponse.createByErrorMessage("PLEASE LOG IN");
         }
-        return iCartService.TODO;
+        return iCartService.deleteProduct(user.getId(),productId);
     }
 
 
