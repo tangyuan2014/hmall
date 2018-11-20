@@ -1,6 +1,9 @@
 package com.hmall.dao;
 
 import com.hmall.pojo.Shipping;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 public interface ShippingMapper {
     int deleteByPrimaryKey(Integer id);
@@ -14,4 +17,13 @@ public interface ShippingMapper {
     int updateByPrimaryKeySelective(Shipping record);
 
     int updateByPrimaryKey(Shipping record);
+
+    int deleteByUserIdAndId(@Param("userId") int userId,@Param("shippingId") int shippingId);
+
+    int updateByUserIdAndShippingId(Shipping record);
+
+    Shipping selectByUserIdAndId(@Param("userId") int userId,@Param("shippingId") int shippingId);
+
+    List<Shipping> selectByUserId(int userId);
+
 }
