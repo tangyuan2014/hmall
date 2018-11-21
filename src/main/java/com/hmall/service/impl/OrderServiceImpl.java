@@ -14,13 +14,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.hmall.Utils.BigDecimalUtil;
+import com.hmall.Utils.DateTimeUtil;
 import com.hmall.Utils.FTPUtil;
 import com.hmall.Utils.PropsUtil;
+import com.hmall.common.Const;
 import com.hmall.common.ServerResponse;
 import com.hmall.dao.OrderItemMapper;
 import com.hmall.dao.OrderMapper;
+import com.hmall.dao.PayInfoMapper;
 import com.hmall.pojo.Order;
 import com.hmall.pojo.OrderItem;
+import com.hmall.pojo.PayInfo;
 import com.hmall.service.IOrderService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -28,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,11 +42,27 @@ import java.util.Map;
 @Service("iOrderService")
 public class OrderServiceImpl implements IOrderService {
 
+
+    private static AlipayTradeService tradeService;
+    static {
+        Configs.init("zfbinfo.properties");
+
+        /** 使用Configs提供的默认参数
+         *  AlipayTradeService可以使用单例或者为静态成员对象，不需要反复new
+         */
+        tradeService = new AlipayTradeServiceImpl.ClientBuilder().setCharset("UTF-8").build();
+    }
+
+
     @Autowired
     private OrderMapper orderMapper;
 
     @Autowired
     private OrderItemMapper orderItem;
+
+    @Autowired
+    private PayInfoMapper payInfoMapper;
+
 
     private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
@@ -112,12 +133,6 @@ public class OrderServiceImpl implements IOrderService {
                 .setNotifyUrl("http://www.happymall.com/order/alipay_callback.do")//支付宝服务器主动通知商户服务器里指定的页面http路径,根据需要设置
                 .setGoodsDetailList(goodsDetailList);
 
-        Configs.init("zfbinfo.properties");
-
-        /** 使用Configs提供的默认参数
-         *  AlipayTradeService可以使用单例或者为静态成员对象，不需要反复new
-         */
-        AlipayTradeService tradeService = new AlipayTradeServiceImpl.ClientBuilder().build();
 
         AlipayF2FPrecreateResult result = tradeService.tradePrecreate(builder);
         switch (result.getTradeStatus()) {
@@ -127,26 +142,26 @@ public class OrderServiceImpl implements IOrderService {
                 AlipayTradePrecreateResponse response = result.getResponse();
                 dumpResponse(response);
 
-                File folder=new File(path);
+                File folder = new File(path);
 
-                if(!folder.exists()){
+                if (!folder.exists()) {
                     folder.setWritable(true);
                     folder.mkdirs();
                 }
 
                 // 需要修改为运行机器上的路径
-                String qrPath = String.format(path+"/qr-%s.png", response.getOutTradeNo());
-                String newFileName=String.format("qr-%s.png",response.getOutTradeNo());
+                String qrPath = String.format(path + "/qr-%s.png", response.getOutTradeNo());
+                String newFileName = String.format("qr-%s.png", response.getOutTradeNo());
                 ZxingUtils.getQRCodeImge(response.getQrCode(), 256, qrPath);
-                File file=new File(path,newFileName);
+                File file = new File(path, newFileName);
                 try {
                     FTPUtil.uploadFile(Lists.newArrayList(file));
                 } catch (IOException e) {
-                    log.error("upload fail",e);
+                    log.error("upload fail", e);
                 }
                 log.info("filePath:" + qrPath);
-                String qrUrl=PropsUtil.getProerty("ftp.server.http.prefix")+newFileName;
-                map.put("qrUrl",qrUrl);
+                String qrUrl = PropsUtil.getProerty("ftp.server.http.prefix") + newFileName;
+                map.put("qrUrl", qrUrl);
                 return ServerResponse.createBySuccess(map);
 
             case FAILED:
@@ -164,7 +179,8 @@ public class OrderServiceImpl implements IOrderService {
         }
 
     }
-    private void dumpResponse (AlipayResponse response){
+
+    private void dumpResponse(AlipayResponse response) {
         if (response != null) {
             log.info(String.format("code:%s, msg:%s", response.getCode(), response.getMsg()));
             if (StringUtils.isNotEmpty(response.getSubCode())) {
@@ -174,4 +190,44 @@ public class OrderServiceImpl implements IOrderService {
             log.info("body:" + response.getBody());
         }
     }
+
+    public ServerResponse alipayCallBack(Map<String,String> params){
+        long orderNo=Long.parseLong(params.get("out_trade_no"));
+        String tradeno=params.get("trade_no");
+        String tradeStatus=params.get("trade_status");
+        Order order=orderMapper.selectByOrderNo(orderNo);
+        if(order==null){
+            return ServerResponse.createByErrorMessage("不是我商户订单");
+        }
+        if(order.getStatus()>= Const.OrderStatus.PAID.getCode()){
+            return ServerResponse.createBySuccessMessage("支付宝重复调用");
+        }
+        if(Const.TradeStatus.TRADE_SUCCESS.equals(tradeStatus)){
+            order.setPaymentTime(DateTimeUtil.strToDataTime(params.get("gmt_payment")));
+            order.setStatus(Const.OrderStatus.PAID.getCode());
+            orderMapper.updateByPrimaryKeySelective(order);
+        }
+
+        PayInfo payInfo=new PayInfo();
+        payInfo.setUserId(order.getUserId());
+        payInfo.setOrderNo(order.getOrderNo());
+        payInfo.setPayPlatform(Const.Platform.ALIPAY.getCode());
+        payInfo.setPlatformNumber(tradeno);
+        payInfo.setPlatformStatus(tradeStatus);
+
+        payInfoMapper.insert(payInfo);
+        return ServerResponse.createBySuccess();
+    }
+
+   public ServerResponse queryOrderPayStatus( Integer userId,Long orderNo){
+        Order order=orderMapper.selectByUserIdAndOrderNo(userId,orderNo);
+        if(order==null){
+            return ServerResponse.createByErrorMessage("没有此订单");
+        }
+       if(order.getStatus()>= Const.OrderStatus.PAID.getCode()){
+           return ServerResponse.createBySuccess();
+       }
+       return ServerResponse.createByError();
+
+   }
 }

@@ -1,9 +1,13 @@
 package com.hmall.controller.portal;
 
 
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.demo.trade.config.Configs;
 import com.google.common.collect.Maps;
 import com.hmall.common.Const;
 import com.hmall.common.ServerResponse;
+import com.hmall.pojo.PayInfo;
 import com.hmall.pojo.User;
 import com.hmall.service.IOrderService;
 import org.slf4j.Logger;
@@ -55,8 +59,41 @@ public class OrderController {
             parmas.put(name,valueStr);
         }
         logger.info("支付宝回调，sign:{},trade_status:{},参数：{}",parmas.get("sign"),parmas.get("trade_status"),parmas.toString());
+        parmas.remove("sign_type");
+        try {
+            boolean alipayRSACheckedV2= AlipaySignature.rsaCheckV2(parmas,Configs.getAlipayPublicKey(),"utf-8",Configs.getSignType());
+        if(!alipayRSACheckedV2){
+            return ServerResponse.createByErrorMessage("非法请求,验证不通过");
+        }
+        } catch (AlipayApiException e) {
+            logger.info("支付宝验证异常",e);
+        }
+
+        ServerResponse serverResponse=iOrderService.alipayCallBack(parmas);
+        if(serverResponse.isSuccess()){
+            return Const.TradeStatus.RESPONSE_SUCCESS;
+        }
+        return Const.TradeStatus.RESPONSE_FAIL;
 
     }
+
+    @RequestMapping("query_order_pay_stattus.do")
+    @ResponseBody
+    public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session, Long orderNo){
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("PLEASE LOG IN");
+        }
+        if(iOrderService.queryOrderPayStatus(user.getId(),orderNo).isSuccess()){
+            return ServerResponse.createBySuccess(true);
+        }
+
+        return ServerResponse.createBySuccess(false);
+    }
+
+
+
+
 
 
 }
